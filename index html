@@ -35,21 +35,43 @@ h1 {
     background: blue;
     border-radius: 50%;
 }
+#exportBtn, #importBtn {
+    color: #fff;
+    width: 10vh;
+    height: 10vh;
+    z-index: 9999;
+    position: fixed;
+    font-size: 25px;
+    margin: 20px auto;
+    background: green;
+    border-radius: 50%;
+}
+#exportBtn {
+    bottom: 25vh;
+    right: 8vh;
+}
+#importBtn {
+    bottom: 38vh;
+    right: 8vh;
+    background: orange;
+}
 </style>
 </head>
 <body>
 <div id="All">
     <div id="Editor"></div>
 </div>
-    <button id="But" onclick="toggleView()">🌐</button>
-    <div id="body"></div>
+<button id="But" onclick="toggleView()">🌐</button>
+<button id="exportBtn" onclick="exportHTML()">📄</button>
+<input type="file" id="importBtn" accept=".html" style="display: none;" onchange="importHTML(event)">
+<label for="importBtn" style="position: fixed; bottom: 38vh; right: 8vh; width: 10vh; height: 10vh; background: orange; color: #fff; border-radius: 50%; text-align: center; line-height: 10vh; font-size: 25px; cursor: pointer;">📂</label>
+<div id="body"></div>
 
 <script>
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.33.0/min/vs' }});
 require(['vs/editor/editor.main'], function() {
     var Editor = monaco.editor.create(document.getElementById('Editor'), {
         value: [
-        '',
             '<!DOCTYPE html>',
             '<html lang="es">',
             '<head>',
@@ -64,44 +86,66 @@ require(['vs/editor/editor.main'], function() {
         ].join('\n'),
         language: 'html',
         theme: 'vs-dark'
-});
+    });
 
     function executeCode() {
-body.innerHTML = Editor.getValue();
-
- <!-- Buscar y ejecutar scripts -->
+        body.innerHTML = Editor.getValue();
+        // Buscar y ejecutar scripts
         var scripts = body.getElementsByTagName('script');
         for (var i = 0; i < scripts.length; i++) {
             var newScript = document.createElement('script');
             newScript.textContent = scripts[i].textContent;
             document.body.appendChild(newScript);
-  }
+        }
         localStorage.setItem('Editor', Editor.getValue());
- }
+    }
+    
     Editor.onDidChangeModelContent(function() {
         executeCode();
-});
+    });
 
-  window.toggleView = function() {
- if (All.style.display == 'none') {
-     All.style.display = 'block';
-     body.style.display = 'none';
+    window.toggleView = function() {
+        if (All.style.display == 'none') {
+            All.style.display = 'block';
+            body.style.display = 'none';
         } else {
-     All.style.display = 'none';
-     body.style.display = 'block';
-   }
-  }
+            All.style.display = 'none';
+            body.style.display = 'block';
+        }
+    }
 
     var codigoGuardado = localStorage.getItem('Editor');
     if (codigoGuardado) {
         Editor.setValue(codigoGuardado);
         executeCode();
     }
+
+    // Función para exportar el contenido del editor como un archivo HTML
+    window.exportHTML = function() {
+        var blob = new Blob([Editor.getValue()], { type: 'text/html' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'codigo.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // Función para importar un archivo HTML al editor
+    window.importHTML = function(event) {
+        var file = event.target.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                Editor.setValue(e.target.result);
+                executeCode();
+            };
+            reader.readAsText(file);
+        }
+    }
 });
 </script>
 </body>
 </html>
-
-
-
-
